@@ -31,6 +31,8 @@ local pp=require 'metalua.pprint'
 function M.new ()
    local self = {
       _acc           = { },  -- Accumulates pieces of source as strings
+      _assign_goto   = { },  -- assigns names to gotos
+      _assign_goto_i = 0,
       current_indent = 0,    -- Current level of line indentation
       indent_step    = "   " -- Indentation symbol, normally spaces or '\t'
    }
@@ -47,12 +49,33 @@ function M:run (ast)
       self, ast = M.new(), self
    end
    self._acc = { }
+   self._assign_goto = { }
+   self._assign_goto_i = 0
    self:acc  ("-- This file has been compiled by Metalua.")
    self:nl   ()
    self:acc  ("-- Do not edit it manually, and instead edit the .mlua source.")
    self:nl   ()
    self:node (ast)
-   return table.concat (self._acc)
+
+   local result = table.concat (self._acc)
+   self._acc = { }
+   self._assign_goto = { }
+   return result
+end
+
+--------------------------------------------------------------------------------
+-- Creates a new name for a goto.
+--------------------------------------------------------------------------------
+
+function M:goto_name (name)
+   if self._assign_goto[name] then
+      return self._assign_goto[name]
+   else
+      local goto_name = "_G" .. string.format('%x', self._assign_goto_i)
+      self._assign_goto_i = self._assign_goto_i + 1
+      self._assign_goto[name] = goto_name
+      return goto_name
+   end
 end
 
 --------------------------------------------------------------------------------
@@ -527,20 +550,12 @@ end
 
 function M:Goto(node, name)
    self:acc 'goto '
-   if name.tag then
-      self:node(name)
-   else
-      self:node(`Id { name })
-   end
+   self:acc (self:goto_name(name))
 end
 
 function M:Label(node, name)
    self:acc '::'
-   if name.tag then
-      self:node(name)
-   else
-      self:node(`Id { name })
-   end
+   self:acc (self:goto_name(name))
    self:acc '::'
 end
 

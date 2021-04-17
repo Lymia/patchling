@@ -30,15 +30,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3c69b077ad434294d3ce9f1f6143a2a4b89a8a2d54ef813d85003a4fd1137fd"
 
 [[package]]
-name = "erased-serde"
-version = "0.3.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0465971a8cc1fa2455c8465aaa377131e1f1cf4983280f474a13e68793aa770c"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -76,13 +67,11 @@ checksum = "6f2fc8e1085d53b72898c59ceee1980b5826b0c98ce99886b7518f0ead00e5cb"
 dependencies = [
  "bstr",
  "cc",
- "erased-serde",
  "lazy_static",
  "lua-src",
  "luajit-src",
  "num-traits",
  "pkg-config",
- "serde",
 ]
 
 [[package]]

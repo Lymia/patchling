@@ -6,5 +6,5 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
-mlua = { version = "0.5", features = ["luajit", "vendored", "serialize"] }
+mlua = { version = "0.5", features = ["luajit", "vendored", "send"] }
 serde = { version = "1.0", features = ["derive"] }
