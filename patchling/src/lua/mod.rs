@@ -38,13 +38,13 @@ impl LuaContext {
         let chunk = chk(lua
             .0
             .load(include_str!("bootstrap_privileged.lua"))
-            .set_name("<intrinsic>/bootstrap_privileged.lua"))?;
+            .set_name("@<intrinsic>/bootstrap_privileged.lua"))?;
         chk(chunk.call::<_, ()>((libs_path, source_path)))?;
 
         let chunk = chk(lua
             .0
             .load(include_str!("bootstrap_metalua.lua"))
-            .set_name("<intrinsic>/bootstrap_metalua.lua"))?;
+            .set_name("@<intrinsic>/bootstrap_metalua.lua"))?;
         chk(chunk.call::<_, ()>(()))?;
 
         Ok(lua)

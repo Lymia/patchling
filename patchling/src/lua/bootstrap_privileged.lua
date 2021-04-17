@@ -10,12 +10,18 @@ end
 function loadfile(...)
     return nil, "File operations are not supported."
 end
-package.preload.thread = nil
+package.preload["thread.exdata"] = nil
+package.preload["thread.exdata2"] = nil
 
--- Create shims for some missing functions
-os = {}
-os.setlocale = function(...) end
-package.loaded.os = os
+-- Creates some non-public (but safe) extension functions for bootstrap_privileged
+do
+    local package = package
+    function require_alias(target, what)
+        if not package.loaded[target] then
+            package.loaded[target] = require(what)
+        end
+    end
+end
 
 -- Disable bytecode loading
 do
@@ -35,6 +41,9 @@ do
             if string_sub(chunk, 1, 4) == "\27Lua" then
                 return nil, "Bytecode loading is not allowed."
             end
+        end
+        if not source then
+            source = "<string>"
         end
         return l_load(chunk, source, "t", env)
     end
@@ -60,23 +69,24 @@ package.path = path_base..";"..path_sources
 -- Loads privileged modules.
 package.loaded["checks"] = require "patchling_private.checks"
 package.loaded["metalua.loader"] = require "patchling_private.metalua_loader"
+require "patchling_private.traceback"
 
 -- Remove unsafe functions that are used by privileged modules.
-debug.getfenv = nil
-debug.setfenv = nil
-debug.gethook = nil
-debug.debug = nil
-debug.getregistry = nil
-debug.getinfo = nil
-debug.getlocal = nil
-debug.setlocal = nil
-debug.getupvalue = nil
-debug.setupvalue = nil
-debug.upvalueid = nil
-debug.upvaluejoin = nil
-debug.sethook = nil
-debug.getmetatable = nil
-debug.setmetatable = nil
-
+debug = nil
+package.loaded.debug = nil
 io = nil
 package.loaded.io = nil
+
+-- Recreate debug.traceback
+debug = {}
+debug.traceback = require "patchling_private.traceback"
+package.loaded.debug = debug
+
+-- Create shims for some missing functions
+os = {}
+os.setlocale = function(...) end
+package.loaded.os = os
+
+-- Seal the package table
+package.loaded.package = nil
+package = nil

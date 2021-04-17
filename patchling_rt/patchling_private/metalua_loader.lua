@@ -25,6 +25,7 @@ local M = require "package" -- extend Lua's basic "package" module
 
 -- Copy important functions to upvalues
 local io_open = io.open
+local loadstring = loadstring
 local require = require
 local string_format = string.format
 local string_gmatch = string.gmatch
@@ -59,7 +60,7 @@ do
     local config_regexp = ("([^\n])\n"):rep(5):sub(1, -2)
     local dir_sep, path_sep, path_mark, execdir, igmark = M.config:match(config_regexp)
 
-    function M.findfile(name, path_string)
+    function M.findfile(name, path_string, no)
         name = string_gsub(name, '%.', dir_sep)
         local errors = { }
         local path_pattern = string_format('[^%s]+', resc(path_sep))
@@ -69,17 +70,17 @@ do
             if file then
                 return file, filename
             end
-            table_insert(errors, string_format("\tno metalua file %q", filename))
+            table_insert(errors, string_format("\tno "..no.." file %q", filename))
         end
         return false, '\n' .. table_concat(errors, "\n") .. '\n'
     end
 end
 
 ----------------------------------------------------------------------
--- Load a metalua source file.
+-- Load a Lua source file.
 ----------------------------------------------------------------------
-function M.metalua_loader (name)
-    local file, filename_or_msg = M.findfile(name, M.mpath)
+function M.lua_loader (name)
+    local file, filename_or_msg = M.findfile(name, M.path, "lua")
     if not file then
         return filename_or_msg
     end
@@ -87,16 +88,36 @@ function M.metalua_loader (name)
     local luastring = file:read '*a'
     file:close()
 
+    local fn, err = loadstring(luastring, "@"..string_gsub(name, '%.', "/")..".lua")
+    if not fn then
+        error(err)
+    else
+        return fn
+    end
+end
+
+----------------------------------------------------------------------
+-- Load a metalua source file.
+----------------------------------------------------------------------
+function M.metalua_loader (name)
     local compiler = M.loaded["metalua.compiler"]
     if compiler then
-        fn, err = compiler.new():src_to_function(luastring, name)
+        local file, filename_or_msg = M.findfile(name, M.mpath, "metalua")
+        if not file then
+            return filename_or_msg
+        end
+
+        local luastring = file:read '*a'
+        file:close()
+
+        local fn, err = compiler.new():src_to_function(luastring, name)
         if not fn then
             error(err)
         else
             return fn
         end
     else
-        return false, "Metalua compiler not loaded."
+        return "\n\tno metalua compiler"
     end
 end
 
@@ -104,6 +125,7 @@ end
 -- Placed after lua/luac loader, so precompiled files have
 -- higher precedence.
 ----------------------------------------------------------------------
+M.loaders[2] = M.lua_loader
 table.insert(M.loaders, M.metalua_loader)
 
 ----------------------------------------------------------------------
@@ -118,5 +140,3 @@ function extension (name, mlp)
         return ast
     end
 end
-
-return true

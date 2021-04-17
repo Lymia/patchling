@@ -17,7 +17,8 @@ build = {
             ["patchling_private.checks"] = "patchling_rt/patchling_private/checks.lua",
             ["patchling_private.metalua_compiler"] = "patchling_rt/patchling_private/metalua_compiler.lua",
             ["patchling_private.metalua_globals"] = "patchling_rt/patchling_private/metalua_globals.lua",
-            ["patchling_private.metalua_loader"] = "patchling_rt/patchling_private/metalua_loader.lua"
+            ["patchling_private.metalua_loader"] = "patchling_rt/patchling_private/metalua_loader.lua",
+            ["patchling_private.traceback"] = "patchling_rt/patchling_private/traceback.lua"
         }
     }
 }
