@@ -47,6 +47,10 @@ function M:run (ast)
       self, ast = M.new(), self
    end
    self._acc = { }
+   self:acc  ("-- This file has been compiled by Metalua.")
+   self:nl   ()
+   self:acc  ("-- Do not edit it manually, and instead edit the .mlua source.")
+   self:nl   ()
    self:node (ast)
    return table.concat (self._acc)
 end

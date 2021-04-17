@@ -12,7 +12,12 @@ build = {
     build_command = "lua5.1 patchling_rt/patchling_private/build_package.lua",
     install = {
         lua = {
-            ["patchling_private.load_metalua"] = "patchling_rt/patchling_private/load_metalua.lua"
+            ["checks"] = "metalua/checks.lua",
+            ["patchling_private.ast_to_src_precompiled"] = "target/lua_src/ast_to_src_precompiled.lua",
+            ["patchling_private.checks"] = "patchling_rt/patchling_private/checks.lua",
+            ["patchling_private.metalua_compiler"] = "patchling_rt/patchling_private/metalua_compiler.lua",
+            ["patchling_private.metalua_globals"] = "patchling_rt/patchling_private/metalua_globals.lua",
+            ["patchling_private.metalua_loader"] = "patchling_rt/patchling_private/metalua_loader.lua"
         }
     }
 }

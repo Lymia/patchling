@@ -25,10 +25,7 @@ fn check_is_root_dir(buf: PathBuf) -> Result<PathBuf> {
 
     let mut tmp = buf.clone();
     tmp.push("lua_modules/share/lua/5.1");
-    ensure!(
-        tmp.exists(),
-        "Path does not contain a lua_modules directory."
-    );
+    ensure!(tmp.exists(), "Path does not contain a lua_modules directory.");
 
     Ok(buf)
 }

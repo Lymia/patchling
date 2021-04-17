@@ -1,4 +1,5 @@
 max_width = 100
+width_heuristics = "Max"
 imports_granularity = "Crate"
 merge_derives = false
 overflow_delimited_expr = true
