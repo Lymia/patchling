@@ -1,8 +1,9 @@
+use crate::paths;
 use anyhow::*;
 use mlua::{Function, Lua, StdLib};
 use std::path::{Path, PathBuf};
 
-mod paths;
+// TODO: Logging.
 
 pub struct LuaContext(Lua);
 impl LuaContext {

@@ -35,6 +35,7 @@ fn get_root_dir() -> Result<PathBuf> {
         .or_else(|_| get_cargo_dir().and_then(check_is_root_dir))
         .or_else(|_| get_cargo_parent_dir().and_then(check_is_root_dir))
 }
+
 pub fn get_lua_root_dir() -> Result<PathBuf> {
     let mut buf = get_root_dir()?;
     buf.push("lua_modules");
