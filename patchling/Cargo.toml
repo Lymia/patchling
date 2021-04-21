@@ -6,5 +6,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
-mlua = { version = "0.5", features = ["luajit", "vendored", "send", "serde"] }
+dirs = "3.0"
+mlua = { version = "0.5", features = ["luajit", "vendored", "send", "serialize"] }
 serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1"

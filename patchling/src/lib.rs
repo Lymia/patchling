@@ -1,10 +1,10 @@
-// TODO: Consider using fixed point in here. Probably not worth it; Stellaris AFAIK uses a large
-//       mix of formats, and our model only lets us use one generic one.
+#[macro_use]
+extern crate tracing;
 
+mod common;
 mod lua;
 mod paths;
 pub mod pdx;
+mod rules;
 
-pub fn test_load_lua() {
-    lua::test_lua().unwrap()
-}
+pub use common::*;

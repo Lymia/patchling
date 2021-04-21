@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 
 pub struct LuaContext(Lua);
 impl LuaContext {
-    pub fn new(source_path: impl AsRef<Path>) -> Result<LuaContext> {
-        let lua_root = paths::get_lua_root_dir()?;
+    pub fn new(lua_root: impl AsRef<Path>, source_path: impl AsRef<Path>) -> Result<LuaContext> {
+        let lua_root = lua_root.as_ref().to_path_buf();
         let lua = unsafe {
             Lua::unsafe_new_with(
                 StdLib::STRING
@@ -45,16 +45,4 @@ impl LuaContext {
             .call("patchling_private.compile_and_minify")?;
         Ok(func.call((source, name))?)
     }
-}
-
-pub fn test_lua() -> Result<()> {
-    let lua = LuaContext::new(PathBuf::new())?;
-    println!(
-        "{}",
-        lua.compile_and_minify(
-            include_str!("../../../patchling_rt/patchling_private/ast_to_src.mlua"),
-            "ast_to_src.mlua"
-        )?
-    );
-    Ok(())
 }

@@ -170,13 +170,8 @@ impl<'a> Display for PdxBlock<'a> {
     }
 }
 
-impl <'a> PdxBlock<'a> {
+impl<'a> PdxBlock<'a> {
     pub fn display_file(&self, outer_braces: bool, pretty_print: bool) -> impl Display + '_ {
-        PdxBlockDisplay {
-            block: self,
-            indent_level: 0,
-            pretty_print,
-            outer_braces,
-        }
+        PdxBlockDisplay { block: self, indent_level: 0, pretty_print, outer_braces }
     }
 }
