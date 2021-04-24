@@ -87,7 +87,7 @@ impl CompilerBuilder {
         println!(
             "{}",
             lua_ctx.compile_and_minify(
-                include_str!("../../patchling_rt/patchling_private/ast_to_src.mlua"),
+                include_str!("../../patchling_rt/patchling_private/mlua/ast_to_src.mlua"),
                 "ast_to_src.mlua",
             )?
         );

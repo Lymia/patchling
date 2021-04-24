@@ -55,7 +55,7 @@ end
 M.mod_paths = nil -- this is a large table, so we remove it now
 
 -- Load references to other modules
-local register_file = (require "patchling_private.traceback").register_file
+local register_file = (require "patchling_private.privileged.traceback").register_file
 
 ----------------------------------------------------------------------
 -- Take a Lua module name, return the open file and its name,
@@ -122,7 +122,7 @@ function M.metalua_loader (name)
             return fn
         end
     else
-        return "tno metalua compiler\n"
+        return "\tno metalua compiler\n"
     end
 end
 

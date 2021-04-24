@@ -82,9 +82,9 @@ package.modules_path = modules_path
 package.mod_paths = mod_paths
 
 -- Loads privileged modules.
-package.loaded["checks"] = require "patchling_private.checks"
-require "patchling_private.traceback"
-package.loaded["metalua.loader"] = require "patchling_private.metalua_loader"
+package.loaded["checks"] = require "patchling_private.privileged.checks"
+require "patchling_private.privileged.traceback"
+package.loaded["metalua.loader"] = require "patchling_private.privileged.metalua_loader"
 
 -- Remove unsafe functions that are used by privileged modules.
 debug = nil
@@ -94,7 +94,7 @@ package.loaded.io = nil
 
 -- Recreate debug.traceback
 debug = {}
-debug.traceback = (require "patchling_private.traceback").traceback
+debug.traceback = (require "patchling_private.privileged.traceback").traceback
 package.loaded.debug = debug
 
 -- Create shims for some missing functions
