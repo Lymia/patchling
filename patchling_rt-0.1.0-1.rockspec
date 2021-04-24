@@ -13,6 +13,7 @@ build = {
     install = {
         lua = {
             ["patchling_private.ast_to_src_precompiled"] = "target/lua_src/ast_to_src_precompiled.lua",
+            ["patchling_private.check_error"] = "patchling_rt/patchling_private/check_error.lua",
             ["patchling_private.checks"] = "patchling_rt/patchling_private/checks.lua",
             ["patchling_private.compile_and_minify"] = "patchling_rt/patchling_private/compile_and_minify.lua",
             ["patchling_private.metalua_compiler"] = "patchling_rt/patchling_private/metalua_compiler.lua",

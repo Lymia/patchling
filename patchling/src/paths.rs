@@ -19,7 +19,8 @@ pub fn get_lua_root_dir() -> Result<PathBuf> {
     fn get_cargo_parent_dir() -> Result<PathBuf> {
         // for workspaces
         let mut path = get_cargo_dir()?;
-        path.push("..");
+        path = path.canonicalize()?;
+        path.pop();
         Ok(path)
     }
     fn check_is_root_dir(buf: PathBuf) -> Result<PathBuf> {

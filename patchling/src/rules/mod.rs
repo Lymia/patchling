@@ -1,4 +1,5 @@
 mod resolve;
+mod rules_parser;
 
 use crate::{pdx::PdxBlock, Game};
 use anyhow::*;

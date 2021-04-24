@@ -1,4 +1,4 @@
-use crate::{lua::LuaContext, paths};
+use crate::{lua::LuaContext, paths, rules::RulesManager};
 use anyhow::*;
 use serde::*;
 use std::path::PathBuf;
@@ -59,6 +59,7 @@ impl CompilerBuilder {
     pub fn build(self) -> Result<Compiler> {
         let root_path = paths::get_lua_root_dir()?;
 
+        // Find the game data directory
         let game_data = self.game_data.clone();
         let game_data = if let Some(data) = game_data {
             debug!("Game data: {} (explicitly set)", data.display());
@@ -77,6 +78,20 @@ impl CompilerBuilder {
             }
         };
 
-        Ok(Compiler { lua_ctx: LuaContext::new(root_path, "")? })
+        // Create the Lua context.
+        let lua_ctx = LuaContext::new(root_path, &[])?;
+        let rules = RulesManager::new(self.game);
+        lua_ctx.register_module("rules", rules)?;
+
+        // TODO: Testing
+        println!(
+            "{}",
+            lua_ctx.compile_and_minify(
+                include_str!("../../patchling_rt/patchling_private/ast_to_src.mlua"),
+                "ast_to_src.mlua",
+            )?
+        );
+
+        Ok(Compiler { lua_ctx })
     }
 }

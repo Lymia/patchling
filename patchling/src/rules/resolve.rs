@@ -34,6 +34,7 @@ fn resolve_files(
             let file = file?;
             let file_name = file.file_name().to_string_lossy().to_string();
             if file_name.ends_with(extension) {
+                debug!("Found file: {}", file.path().display());
                 resolved.push(ResolvedFile {
                     source_mod: source_mod.clone(),
                     file_name,
@@ -54,6 +55,8 @@ pub fn load_rules<'a>(
 ) -> Result<Value<'a>> {
     check_name_safe(directory)?;
     check_name_safe(extension)?;
+
+    let mut files = resolve_files(roots, directory, extension)?;
 
     Ok(Value::Nil)
 }

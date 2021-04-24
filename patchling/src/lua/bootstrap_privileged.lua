@@ -1,7 +1,7 @@
 -- NOTE: This is privileged code and has access to functions that should not be available to user code.
 --       Take extra care when editing this file.
 
-local modules_path, sources_path = ...
+local modules_path, mod_paths = ...
 
 -- Remove unsafe functions.
 function dofile(...)
@@ -10,8 +10,23 @@ end
 function loadfile(...)
     return nil, "File operations are not supported."
 end
-package.preload["thread.exdata"] = nil
-package.preload["thread.exdata2"] = nil
+
+-- Whitelist `package.preload` entries.
+local preload_whitelist = {
+    ["table.isempty"] = true,
+    ["table.isarray"] = true,
+    ["table.nkeys"] = true,
+    ["table.clone"] = true,
+}
+for k, v in pairs(package.preload) do
+    if not preload_whitelist[k] then
+        package.preload[v] = nil
+    end
+end
+table.isempty = require "table.isempty"
+table.isarray = require "table.isarray"
+table.nkeys = require "table.nkeys"
+table.clone = require "table.clone"
 
 -- Creates some non-public (but safe) extension functions for bootstrap_privileged
 do
@@ -57,19 +72,19 @@ end
 package.loaders[3] = nil
 package.loaders[4] = nil
 
--- Setup loader paths
+-- Setup bootstrap loader paths
 local pkg_root = modules_path.."/share/lua/5.1/"
-local pkg_source = sources_path.."/"
-local path_base = pkg_root.."?.lua;"..pkg_root.."?/init.lua"
-local path_sources = pkg_source.."?.lua;"..pkg_source.."?/init.lua"
-
 package.cpath = ""
-package.path = path_base..";"..path_sources
+package.path = pkg_root.."?.lua;"..pkg_root.."?/init.lua"
+
+-- Pass package paths to our loader
+package.modules_path = modules_path
+package.mod_paths = mod_paths
 
 -- Loads privileged modules.
 package.loaded["checks"] = require "patchling_private.checks"
-package.loaded["metalua.loader"] = require "patchling_private.metalua_loader"
 require "patchling_private.traceback"
+package.loaded["metalua.loader"] = require "patchling_private.metalua_loader"
 
 -- Remove unsafe functions that are used by privileged modules.
 debug = nil
@@ -79,7 +94,7 @@ package.loaded.io = nil
 
 -- Recreate debug.traceback
 debug = {}
-debug.traceback = require "patchling_private.traceback"
+debug.traceback = (require "patchling_private.traceback").traceback
 package.loaded.debug = debug
 
 -- Create shims for some missing functions
