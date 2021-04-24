@@ -112,9 +112,9 @@ function CONV:lexstream_to_ast(lx, name)
     return r, name
 end
 
-local ast_to_lua_ul = require 'metalua.compiler.ast_to_src'
+local ast_to_lua_impl = require 'metalua.compiler.ast_to_src'
 function CONV:ast_to_lua(ast, name)
-    return ast_to_lua_ul(ast), name
+    return ast_to_lua_impl(ast), name
 end
 
 local loadstring = loadstring -- save this to avoid later loops

@@ -79,6 +79,7 @@ impl CompilerBuilder {
         };
 
         // Create the Lua context.
+        debug!("Initializing Lua context...");
         let lua_ctx = LuaContext::new(root_path, &[])?;
         let rules = RulesManager::new(self.game);
         lua_ctx.register_module("rules", rules)?;
@@ -92,6 +93,7 @@ impl CompilerBuilder {
             )?
         );
 
+        debug!("Compiler initialized!");
         Ok(Compiler { lua_ctx })
     }
 }

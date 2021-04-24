@@ -137,7 +137,7 @@ table.insert(M.loaders, M.metalua_loader)
 -- Load an extension.
 ----------------------------------------------------------------------
 function extension (name, mlp)
-    checks('string', 'string')
+    checks('string', 'table')
 
     local complete_name = metalua_extension_prefix .. name
     local extend_func = require(complete_name)
