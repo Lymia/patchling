@@ -1,0 +1,63 @@
+[config]
+default_to_workspace = false
+skip_core_tasks = true
+
+[env]
+RUSTFLAGS = """
+    -Z trim-diagnostic-paths=on
+    --remap-path-prefix ${HOME}/=/
+    --remap-path-prefix ${CARGO_MAKE_CARGO_HOME}/=
+    --remap-path-prefix ${CARGO_MAKE_CARGO_HOME}/registry/src/github.com-1ecc6299db9ec823/=
+    --remap-path-prefix ${CARGO_MAKE_CARGO_HOME}/git/checkouts/=
+    --remap-path-prefix ${HOME}/.rustup/toolchains/${CARGO_MAKE_RUST_CHANNEL}-${CARGO_MAKE_RUST_TARGET_TRIPLE}/lib/rustlib/src/=
+    --remap-path-prefix ${HOME}/.rustup/toolchains/${CARGO_MAKE_RUST_CHANNEL}-${CARGO_MAKE_RUST_TARGET_TRIPLE}/lib/rustlib/src/rust/library/=rustlib
+    --remap-path-prefix ${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/=
+    --remap-path-prefix ${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/src/=
+    -Z polymorphize=on
+"""
+
+##################
+# Initialization #
+##################
+
+[tasks.init_submodules]
+command = "git"
+args = ["submodule", "update", "--init"]
+
+[tasks.init_luarocks]
+command = "luarocks"
+args = ["init", "patchling_rt"]
+
+##########################
+# Initialize Lua modules #
+##########################
+
+[tasks.build_modules]
+script_runner = "@duckscript"
+script = """
+    exit_on_error true
+
+    exists = is_path_exists ./lua_modules/lib/luarocks/rocks-5.1/metalua-compiler
+    exists = not ${exists}
+    if ${exists}
+        echo "Building metalua..."
+        cd metalua
+
+        exec --fail-on-error ../luarocks make metalua-parser-0.7.2-1.rockspec
+        exec --fail-on-error ../luarocks make metalua-compiler-0.7.2-1.rockspec
+
+        cd ..
+    else
+        echo "Metalua already built..."
+    end
+
+    echo "Building patchling..."
+    exec --fail-on-error ./luarocks make patchling_rt-0.1.0-1.rockspec
+"""
+dependencies = ["init_submodules", "init_luarocks"]
+
+#####################
+# Entry point tasks #
+#####################
+
+[tasks.default]

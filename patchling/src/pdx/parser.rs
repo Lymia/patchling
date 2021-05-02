@@ -1,18 +1,18 @@
 use crate::pdx::{PdxBlock, PdxBlockContent, PdxRelation, PdxRelationType, PdxRelationValue};
 use anyhow::*;
-use std::{borrow::Cow, str::FromStr};
+use std::{str::FromStr, sync::Arc};
 
-struct ParserCtx<'a, 'b> {
+struct ParserCtx<'a> {
     source: &'a [u8],
     source_str: &'a str,
     cursor: usize,
 
-    file_name: &'b str,
+    file_name: &'a str,
     cur_line: usize,
     cur_col: usize,
 }
-impl<'a, 'b> ParserCtx<'a, 'b> {
-    fn new(file_name: &'b str, src: &'a str) -> Self {
+impl<'a> ParserCtx<'a> {
+    fn new(file_name: &'a str, src: &'a str) -> Self {
         ParserCtx {
             source: src.as_bytes(),
             source_str: src,
@@ -92,7 +92,7 @@ impl<'a, 'b> ParserCtx<'a, 'b> {
     }
 
     /// Parses a quoted string.
-    fn parse_quoted_str(&mut self) -> Result<Option<Cow<'a, str>>> {
+    fn parse_quoted_str(&mut self) -> Result<Option<Arc<str>>> {
         if !self.check_tok(b"\"")? {
             Ok(None)
         } else {
@@ -137,15 +137,15 @@ impl<'a, 'b> ParserCtx<'a, 'b> {
                     }
                 }
                 assert!(!has_escape);
-                Ok(Some(Cow::Owned(owned)))
+                Ok(Some(owned.into()))
             } else {
-                Ok(Some(Cow::Borrowed(tok)))
+                Ok(Some(tok.into()))
             }
         }
     }
 
     /// Parses a complex variable.
-    fn parse_variable(&mut self) -> Result<Option<PdxRelationValue<'a>>> {
+    fn parse_variable(&mut self) -> Result<Option<PdxRelationValue>> {
         self.skip_whitespace()?;
 
         if self.check_tok(b"@")? {
@@ -161,7 +161,7 @@ impl<'a, 'b> ParserCtx<'a, 'b> {
 
                 let res = &self.source_str[self.cursor..self.cursor + count];
                 self.advance_cur(count + 1)?;
-                Ok(Some(PdxRelationValue::VariableExpr(Cow::Borrowed(res))))
+                Ok(Some(PdxRelationValue::VariableExpr(res.into())))
             } else {
                 Ok(Some(PdxRelationValue::Variable(self.parse_value_id()?)))
             }
@@ -172,7 +172,7 @@ impl<'a, 'b> ParserCtx<'a, 'b> {
 
     /// Parses a key identifier.
     // TODO: This is based on CWTools' parser. We might need to improve this further, depending.
-    fn parse_key_id(&mut self) -> Result<Cow<'a, str>> {
+    fn parse_key_id(&mut self) -> Result<Arc<str>> {
         self.skip_whitespace()?;
 
         if let Some(str) = self.parse_quoted_str()? {
@@ -199,13 +199,13 @@ impl<'a, 'b> ParserCtx<'a, 'b> {
 
             let res = &self.source_str[self.cursor..self.cursor + count];
             self.advance_cur(count)?;
-            Ok(Cow::Borrowed(res))
+            Ok(res.into())
         }
     }
 
     /// Parses a value identifier.
     // TODO: This is based on CWTools' parser. We might need to improve this further, depending.
-    fn parse_value_id(&mut self) -> Result<Cow<'a, str>> {
+    fn parse_value_id(&mut self) -> Result<Arc<str>> {
         self.skip_whitespace()?;
 
         if let Some(str) = self.parse_quoted_str()? {
@@ -235,7 +235,7 @@ impl<'a, 'b> ParserCtx<'a, 'b> {
 
             let res = &self.source_str[self.cursor..self.cursor + count];
             self.advance_cur(count)?;
-            Ok(Cow::Borrowed(res))
+            Ok(res.into())
         }
     }
 
@@ -246,29 +246,31 @@ impl<'a, 'b> ParserCtx<'a, 'b> {
 }
 
 impl PdxRelationType {
-    fn parse(ctx: &mut ParserCtx<'_, '_>) -> Result<Option<Self>> {
+    fn parse(ctx: &mut ParserCtx<'_>) -> Result<Option<Self>> {
         ctx.skip_whitespace()?;
 
         if ctx.check_tok(b"==")? {
-            Ok(Some(PdxRelationType::Equal))
+            Ok(Some(PdxRelationType::Eq))
         } else if ctx.check_tok(b"<=")? {
-            Ok(Some(PdxRelationType::LessOrEqual))
+            Ok(Some(PdxRelationType::Le))
         } else if ctx.check_tok(b">=")? {
-            Ok(Some(PdxRelationType::GreaterOrEqual))
+            Ok(Some(PdxRelationType::Ge))
         } else if ctx.check_tok(b"<")? {
-            Ok(Some(PdxRelationType::LessThan))
+            Ok(Some(PdxRelationType::Lt))
         } else if ctx.check_tok(b">")? {
-            Ok(Some(PdxRelationType::GreaterThan))
+            Ok(Some(PdxRelationType::Gt))
         } else if ctx.check_tok(b"=")? {
             Ok(Some(PdxRelationType::Normal))
+        } else if ctx.check_tok(b"!=")? {
+            Ok(Some(PdxRelationType::Ne))
         } else {
             Ok(None)
         }
     }
 }
 
-impl<'a> PdxBlockContent<'a> {
-    fn parse(ctx: &mut ParserCtx<'a, '_>) -> Result<Self> {
+impl PdxBlockContent {
+    fn parse(ctx: &mut ParserCtx<'_>) -> Result<Self> {
         let key = ctx.parse_key_id()?;
         if let Some(relation) = PdxRelationType::parse(ctx)? {
             ctx.skip_whitespace()?;
@@ -291,8 +293,8 @@ impl<'a> PdxBlockContent<'a> {
     }
 }
 
-impl<'a> PdxBlock<'a> {
-    fn parse_bracketed(ctx: &mut ParserCtx<'a, '_>) -> Result<Self> {
+impl PdxBlock {
+    fn parse_bracketed(ctx: &mut ParserCtx<'_>) -> Result<Self> {
         let mut contents = Vec::new();
         if ctx.check_tok(b"{")? {
             loop {
@@ -309,7 +311,7 @@ impl<'a> PdxBlock<'a> {
         Ok(PdxBlock { contents })
     }
 
-    pub fn parse_file(file_name: &str, file_data: &'a [u8]) -> Result<Self> {
+    pub fn parse_file(file_name: &str, file_data: &[u8]) -> Result<Self> {
         let mut ctx = ParserCtx::new(file_name, std::str::from_utf8(file_data)?);
         ctx.check_tok(b"\xEF\xBB\xBF")?; // remove UTF-8 BOM if one exists.
 

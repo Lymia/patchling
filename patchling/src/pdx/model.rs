@@ -5,18 +5,19 @@ use serde::{
     },
     *,
 };
-use std::{borrow::Cow, fmt, fmt::Formatter, marker::PhantomData};
+use std::{fmt, fmt::Formatter, marker::PhantomData, sync::Arc};
 
 #[derive(Serialize, Deserialize)]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum PdxRelationType {
-    Normal,
-    LessThan,
-    GreaterThan,
-    LessOrEqual,
-    GreaterOrEqual,
-    Equal,
+    Normal, // this is normally represented with `nil` in Lua, but is in fact stable.
+    Lt,
+    Gt,
+    Le,
+    Ge,
+    Eq,
+    Ne,
 }
 impl Default for PdxRelationType {
     fn default() -> Self {
@@ -24,60 +25,56 @@ impl Default for PdxRelationType {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 
-pub enum PdxRelationValue<'a> {
+pub enum PdxRelationValue {
     #[serde(rename = "block")]
-    Block(PdxBlock<'a>),
+    Block(PdxBlock),
     #[serde(rename = "val")]
-    String(Cow<'a, str>),
+    String(Arc<str>),
     #[serde(rename = "num")]
     Numeric(f64),
     #[serde(rename = "var")]
-    Variable(Cow<'a, str>),
+    Variable(Arc<str>),
     #[serde(rename = "var_expr")]
-    VariableExpr(Cow<'a, str>),
+    VariableExpr(Arc<str>),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PdxRelation<'a> {
-    pub tag: Cow<'a, str>,
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+pub struct PdxRelation {
+    pub tag: Arc<str>,
     #[serde(skip_serializing_if = "is_relation_normal", default)]
     pub relation: PdxRelationType,
     #[serde(flatten)]
-    pub value: PdxRelationValue<'a>,
+    pub value: PdxRelationValue,
 }
 fn is_relation_normal(relation: &PdxRelationType) -> bool {
     *relation == PdxRelationType::Normal
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, PartialEq, Clone, Debug)]
 #[serde(untagged)] // untagged serialize does what we want
-pub enum PdxBlockContent<'a> {
-    Relation(PdxRelation<'a>),
-    String(Cow<'a, str>),
+pub enum PdxBlockContent {
+    Relation(PdxRelation),
+    String(Arc<str>),
 }
-impl<'a, 'de> Deserialize<'de> for PdxBlockContent<'a> {
+impl<'de> Deserialize<'de> for PdxBlockContent {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: Deserializer<'de> {
-        deserializer.deserialize_any(PdxBlockVisitor(PhantomData))
+        deserializer.deserialize_any(PdxBlockVisitor(()))
     }
 }
 
-struct PdxBlockVisitor<'a>(PhantomData<&'a ()>);
-impl<'a, 'de> Visitor<'de> for PdxBlockVisitor<'a> {
-    type Value = PdxBlockContent<'a>;
+struct PdxBlockVisitor(());
+impl<'de> Visitor<'de> for PdxBlockVisitor {
+    type Value = PdxBlockContent;
     fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         formatter.write_str("block member")
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where E: Error {
-        Ok(PdxBlockContent::String(Cow::Owned(v.to_string())))
-    }
-    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
-    where E: Error {
-        Ok(PdxBlockContent::String(Cow::Owned(v)))
+        Ok(PdxBlockContent::String(v.into()))
     }
 
     fn visit_seq<A>(self, seq: A) -> Result<Self::Value, <A as SeqAccess<'de>>::Error>
@@ -90,8 +87,8 @@ impl<'a, 'de> Visitor<'de> for PdxBlockVisitor<'a> {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 #[serde(transparent)]
-pub struct PdxBlock<'a> {
-    pub contents: Vec<PdxBlockContent<'a>>,
+pub struct PdxBlock {
+    pub contents: Vec<PdxBlockContent>,
 }

@@ -156,16 +156,6 @@ for i = 1, #M.sequence do
     end
 end
 
-
---------------------------------------------------------------------------------
--- This one goes in the "wrong" direction, cannot be composed.
---------------------------------------------------------------------------------
-function CONV:function_to_bytecode(...)
-    return string.dump(...)
-end
-
-CONV.ast_to_src = CONV.ast_to_lua
-
 local MT = { __index = CONV, __type = 'metalua.compiler' }
 
 function M.new()

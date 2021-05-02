@@ -31,3 +31,10 @@ build = {
         }
     }
 }
+dependencies = {
+    "lua ~> 5.1",
+    "luasrcdiet >= 1.0",
+    "metalua-compiler >= 0.7.2",
+    "metalua-parser >= 0.7.2",
+}
+

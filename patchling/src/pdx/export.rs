@@ -5,11 +5,12 @@ impl Display for PdxRelationType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             PdxRelationType::Normal => f.write_str("="),
-            PdxRelationType::LessThan => f.write_str("<"),
-            PdxRelationType::GreaterThan => f.write_str(">"),
-            PdxRelationType::LessOrEqual => f.write_str("<="),
-            PdxRelationType::GreaterOrEqual => f.write_str(">="),
-            PdxRelationType::Equal => f.write_str("=="),
+            PdxRelationType::Lt => f.write_str("<"),
+            PdxRelationType::Gt => f.write_str(">"),
+            PdxRelationType::Le => f.write_str("<="),
+            PdxRelationType::Ge => f.write_str(">="),
+            PdxRelationType::Eq => f.write_str("=="),
+            PdxRelationType::Ne => f.write_str("!="),
         }
     }
 }
@@ -48,12 +49,12 @@ impl<'a> Display for DisplayStr<'a> {
     }
 }
 
-struct PdxRelationValueDisplay<'a, 'b: 'a> {
-    rel: &'a PdxRelationValue<'b>,
+struct PdxRelationValueDisplay<'a> {
+    rel: &'a PdxRelationValue,
     indent_level: usize,
     pretty_print: bool,
 }
-impl<'a, 'b: 'a> Display for PdxRelationValueDisplay<'a, 'b> {
+impl<'a> Display for PdxRelationValueDisplay<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self.rel {
             PdxRelationValue::Block(block) => Display::fmt(
@@ -73,7 +74,7 @@ impl<'a, 'b: 'a> Display for PdxRelationValueDisplay<'a, 'b> {
     }
 }
 
-impl<'a> Display for PdxRelationValue<'a> {
+impl Display for PdxRelationValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         Display::fmt(
             &PdxRelationValueDisplay { rel: self, indent_level: 0, pretty_print: false },
@@ -82,13 +83,13 @@ impl<'a> Display for PdxRelationValue<'a> {
     }
 }
 
-impl<'a> Display for PdxRelation<'a> {
+impl Display for PdxRelation {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{} {} {}", self.tag, self.relation, self.value)
     }
 }
 
-impl<'a> Display for PdxBlockContent<'a> {
+impl Display for PdxBlockContent {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             PdxBlockContent::Relation(rel) => Display::fmt(rel, f),
@@ -107,13 +108,13 @@ impl Display for Indent {
     }
 }
 
-struct PdxBlockDisplay<'a, 'b: 'a> {
-    block: &'a PdxBlock<'b>,
+struct PdxBlockDisplay<'a> {
+    block: &'a PdxBlock,
     indent_level: usize,
     pretty_print: bool,
     outer_braces: bool,
 }
-impl<'a, 'b: 'a> Display for PdxBlockDisplay<'a, 'b> {
+impl<'a> Display for PdxBlockDisplay<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.outer_braces {
             f.write_char('{')?;
@@ -156,7 +157,7 @@ impl<'a, 'b: 'a> Display for PdxBlockDisplay<'a, 'b> {
     }
 }
 
-impl<'a> Display for PdxBlock<'a> {
+impl Display for PdxBlock {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         Display::fmt(
             &PdxBlockDisplay {
@@ -170,7 +171,7 @@ impl<'a> Display for PdxBlock<'a> {
     }
 }
 
-impl<'a> PdxBlock<'a> {
+impl PdxBlock {
     pub fn display_file(&self, outer_braces: bool, pretty_print: bool) -> impl Display + '_ {
         PdxBlockDisplay { block: self, indent_level: 0, pretty_print, outer_braces }
     }
