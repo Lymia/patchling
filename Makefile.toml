@@ -15,6 +15,10 @@ RUSTFLAGS = """
     --remap-path-prefix ${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/src/=
     -Z polymorphize=on
 """
+LUA_INC = "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/luajit/usr/include/luajit-2.1"
+LUA_LIB = "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/luajit/usr/lib"
+LUA_LIB_NAME = "luajit-5.1-patchling"
+LD_LIBRARY_PATH = "${LD_LIBRARY_PATH}:target/luajit/usr/lib"
 
 ##################
 # Initialization #
@@ -32,32 +36,136 @@ args = ["init", "patchling_rt"]
 # Initialize Lua modules #
 ##########################
 
-[tasks.build_modules]
+[tasks.subtask_delete_modules]
 script_runner = "@duckscript"
 script = """
     exit_on_error true
 
-    exists = is_path_exists ./lua_modules/lib/luarocks/rocks-5.1/metalua-compiler
+    if is_path_exists lua_modules
+        rm -r lua_modules
+        mkdir lua_modules
+    end
+"""
+
+[tasks.build_lua_root]
+script_runner = "@duckscript"
+script = """
+    exit_on_error true
+
+    if is_path_exists lua_modules/release_marker
+        cm_run_task subtask_delete_modules
+    end
+
+    exists = is_path_exists lua_modules/lib/luarocks/rocks-5.1/metalua-compiler
     exists = not ${exists}
     if ${exists}
         echo "Building metalua..."
-        cd metalua
+        cd contrib/metalua
 
-        exec --fail-on-error ../luarocks make metalua-parser-0.7.2-1.rockspec
-        exec --fail-on-error ../luarocks make metalua-compiler-0.7.2-1.rockspec
+        exec --fail-on-error ../../luarocks make metalua-parser-0.7.2-1.rockspec
+        exec --fail-on-error ../../luarocks make metalua-compiler-0.7.2-1.rockspec
 
-        cd ..
+        cd ../..
     else
         echo "Metalua already built..."
     end
 
     echo "Building patchling..."
-    exec --fail-on-error ./luarocks make patchling_rt-0.1.0-1.rockspec
+    cd src
+    exec --fail-on-error ../luarocks make patchling_rt-0.1.0-1.rockspec
+    cd ..
 """
 dependencies = ["init_submodules", "init_luarocks"]
+
+[tasks.build_minimal_lua_root]
+script_runner = "@duckscript"
+script = """
+    exit_on_error true
+
+    cm_run_task build_lua_root
+
+    echo "Creating marker."
+    touch lua_modules/release_marker
+
+    echo "Removing unneeded modules..."
+    exec --fail-on-error ./luarocks remove --force luafilesystem
+    exec --fail-on-error ./luarocks remove --force luaposix
+    exec --fail-on-error ./luarocks remove --force readline
+    exec --fail-on-error ./luarocks remove --force checks
+
+    echo "Removing unneeded documentation and files..."
+    rm -rfv lua_modules/bin
+    rm -rfv lua_modules/lib/luarocks/rocks-5.1/luasrcdiet/1.0.0-2/bin
+    rm -rfv lua_modules/lib/luarocks/rocks-5.1/luasrcdiet/1.0.0-2/doc
+    rm -rfv lua_modules/lib/luarocks/rocks-5.1/metalua-compiler/0.7.2-1/doc
+    rm -rfv lua_modules/lib/luarocks/rocks-5.1/metalua-parser/0.7.2-1/doc
+    rm -rfv lua_modules/share/lua/5.1/metalua/compiler/bytecode
+"""
+dependencies = ["init_submodules", "init_luarocks", "subtask_delete_modules"]
+
+###################
+# Building Luajit #
+###################
+
+[tasks.build_luajit]
+linux_alias = "build_luajit_linux"
+
+[tasks.build_luajit_linux]
+script_runner = "@duckscript"
+script = """
+    exit_on_error true
+
+    exists = is_path_exists target/luajit
+    exists = not ${exists}
+    if ${exists}
+        cd contrib/luajit
+        root_dir = pwd
+        exec --fail-on-error \
+            make clean
+        exec --fail-on-error \
+            make -j16 "XCFLAGS=-DLUAJIT_NUMMODE=2 -msse4.2 -O3 -flto -DLUAJIT_ENABLE_LUA52COMPAT" \
+            PREFIX=/usr ABIVER=5.1-patchling
+        exec --fail-on-error \
+            make install DESTDIR=${root_dir}/../target/luajit \
+            PREFIX=/usr ABIVER=5.1-patchling
+        cd ../..
+    end
+"""
+dependencies = ["init_submodules"]
+
+###############
+# Build tasks #
+###############
+
+[tasks.build_cli_release]
+command = "cargo"
+args = ["build", "--release", "-p", "patchling_cli"]
+dependencies = ["build_luajit"]
+
+[tasks.build_cli_debug]
+command = "cargo"
+args = ["build", "-p", "patchling_cli"]
+dependencies = ["build_luajit"]
+
+######################
+# Distribution tasks #
+######################
+
+[tasks.dist_linux]
+command = "appimage-builder"
+dependencies = ["build_minimal_lua_root", "build_luajit", "build_cli_release"]
 
 #####################
 # Entry point tasks #
 #####################
 
+[tasks.dist]
+linux_alias = "dist_linux"
+
+[tasks.run]
+command = "cargo"
+args = ["run", "-p", "patchling_cli", "--", "${@}"]
+dependencies = ["build_luajit", "build_lua_root"]
+
 [tasks.default]
+alias = "run"

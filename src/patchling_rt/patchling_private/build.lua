@@ -1,5 +1,5 @@
-package.cpath = "lua_modules/lib/lua/5.1/?.so"
-package.path = "patchling_rt/?.lua;metalua/?.lua"
+package.cpath = "../lua_modules/lib/lua/5.1/?.so"
+package.path = "patchling_rt/?.lua;../contrib/metalua/?.lua"
 
 require "metalua.loader"
 require "metalua.compiler.globals"
@@ -20,6 +20,6 @@ local function compile_to_src(file)
     return into_src(ast)
 end
 
-lfs.mkdir("target/lua_src")
-io.open("target/lua_src/ast_to_src_precompiled.lua", "w")
+lfs.mkdir("../target/lua_src")
+io.open("../target/lua_src/ast_to_src_precompiled.lua", "w")
         :write(compile_to_src("patchling_rt/patchling_private/mlua/ast_to_src.mlua"))

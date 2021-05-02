@@ -16,6 +16,17 @@ pub fn get_lua_root_dir() -> Result<PathBuf> {
             None => bail!("CARGO_MANIFEST_DIR not found."),
         }
     }
+    fn get_appimage_dir() -> Result<PathBuf> {
+        // for AppImage builds
+        match env::var_os("APPDIR") {
+            Some(app_dir) => {
+                let mut dir = PathBuf::from(app_dir);
+                dir.push("usr/share/patchling");
+                Ok(dir)
+            }
+            None => bail!("APPDIR not found."),
+        }
+    }
     fn get_cargo_parent_dir() -> Result<PathBuf> {
         // for workspaces
         let mut path = get_cargo_dir()?;
@@ -35,8 +46,10 @@ pub fn get_lua_root_dir() -> Result<PathBuf> {
 
     let mut buf = get_exe_dir()
         .and_then(check_is_root_dir)
+        .or_else(|_| get_appimage_dir().and_then(check_is_root_dir))
         .or_else(|_| get_cargo_dir().and_then(check_is_root_dir))
-        .or_else(|_| get_cargo_parent_dir().and_then(check_is_root_dir))?;
+        .or_else(|_| get_cargo_parent_dir().and_then(check_is_root_dir))
+        .map_err(|_| Error::msg("Could not find Lua modules path. Are all the files present?"))?;
     buf.push("lua_modules");
     Ok(buf)
 }

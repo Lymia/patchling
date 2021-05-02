@@ -1,0 +1,38 @@
+# appimage-builder recipe see https://appimage-builder.readthedocs.io for details
+version: 1
+AppDir:
+  path: ./AppDir
+  app_info:
+    id: moe.lymia.patchling
+    name: Patchling
+    icon: utilities-terminal
+    version: 0.1.0
+    exec: usr/bin/patchling_cli
+    exec_args: $@
+    
+  after_bundle: |
+    cp -r target/luajit/* AppDir/
+    rm AppDir/usr/lib/*.a
+    rm AppDir/usr/bin/luajit*
+
+    cp -r target/release/patchling_cli AppDir/usr/bin
+    mkdir -p AppDir/usr/share/patchling
+    cp -r lua_modules/ AppDir/usr/share/patchling/
+
+  runtime:
+    env:
+      APPDIR_LIBRARY_PATH: '$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu'
+  
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ groovy main'
+        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C'
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ groovy-updates main'
+    include:
+      - libgcc-s1
+
+AppImage:
+  arch: x86_64
+  update-information: guess
+  sign-key: None

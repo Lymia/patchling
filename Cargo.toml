@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "patchling",
-    "patchling_cli",
+    "src/patchling",
+    "src/patchling_cli",
 ]
 
 [profile.dev]

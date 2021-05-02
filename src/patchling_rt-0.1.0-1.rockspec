@@ -13,7 +13,7 @@ build = {
     install = {
         lua = {
             ["patchling_private.mlua.ast_to_src_precompiled"] =
-                "target/lua_src/ast_to_src_precompiled.lua",
+                "../target/lua_src/ast_to_src_precompiled.lua",
             ["patchling_private.mlua.metalua_compiler"] =
                 "patchling_rt/patchling_private/mlua/metalua_compiler.lua",
             ["patchling_private.mlua.metalua_globals"] =
@@ -37,4 +37,3 @@ dependencies = {
     "metalua-compiler >= 0.7.2",
     "metalua-parser >= 0.7.2",
 }
-

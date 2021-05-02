@@ -1,6 +1,6 @@
 [submodule "metalua"]
-	path = metalua
+	path = contrib/metalua
 	url = https://github.com/fab13n/metalua.git
 [submodule "luajit"]
-	path = luajit
+	path = contrib/luajit
 	url = https://github.com/openresty/luajit2
